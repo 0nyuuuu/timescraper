@@ -8,6 +8,16 @@ class DateEventProvider extends ChangeNotifier {
 
   List<DateEventModel> get monthEvents => _monthEvents;
 
+  List<DateEventModel> eventsOf(DateTime date) {
+    return _monthEvents
+        .where((e) =>
+    e.date.year == date.year &&
+        e.date.month == date.month &&
+        e.date.day == date.day)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+  }
+
   void loadMonth(DateTime month) {
     _monthEvents = HiveService.getDateEventsByMonth(month);
     notifyListeners();

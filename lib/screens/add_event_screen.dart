@@ -22,6 +22,12 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final _titleController = TextEditingController();
 
   @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('일정 생성')),
@@ -41,15 +47,23 @@ class _AddEventScreenState extends State<AddEventScreen> {
             const Spacer(),
             ElevatedButton(
               onPressed: () async {
+                final title = _titleController.text.trim();
+                if (title.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('제목을 입력해주세요')),
+                  );
+                  return;
+                }
+
                 await context.read<EventProvider>().addEvent(
-                  title: _titleController.text,
+                  title: title,
                   description: '',
                   date: widget.date,
                   startHour: widget.initialstartHour,
                   endHour: widget.initialendHour,
                 );
 
-                Navigator.pop(context, true); // 중요
+                if (mounted) Navigator.pop(context, true);
               },
               child: const Text('저장'),
             ),
