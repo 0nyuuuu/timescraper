@@ -29,22 +29,32 @@ class HiveService {
   }
 
   static List<EventModel> getEventsByDate(DateTime date) {
-    return eventBox.values.where((e) =>
+    return eventBox.values
+        .where((e) =>
     e.date.year == date.year &&
         e.date.month == date.month &&
-        e.date.day == date.day
-    ).toList();
+        e.date.day == date.day)
+        .toList();
   }
 
   // 날짜 이벤트
   static List<DateEventModel> getDateEventsByMonth(DateTime month) {
-    return dateEventBox.values.where((e) =>
-    e.date.year == month.year &&
-        e.date.month == month.month
-    ).toList();
+    return dateEventBox.values
+        .where((e) => e.date.year == month.year && e.date.month == month.month)
+        .toList();
   }
 
   static Future<void> addDateEvent(DateEventModel event) async {
     await dateEventBox.put(event.id, event);
+  }
+
+  // ✅ 추가: 날짜 이벤트 수정
+  static Future<void> updateDateEvent(DateEventModel event) async {
+    await dateEventBox.put(event.id, event);
+  }
+
+  // ✅ 추가: 날짜 이벤트 삭제
+  static Future<void> deleteDateEvent(String id) async {
+    await dateEventBox.delete(id);
   }
 }

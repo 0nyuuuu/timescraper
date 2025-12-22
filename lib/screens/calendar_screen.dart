@@ -55,7 +55,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     setState(() {
       final prev = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
       _focusedMonth = DateTime(prev.year, prev.month);
-      // 선택일이 현재 월 밖이면 1일로 보정
       if (!_isSameMonth(_selectedDate, _focusedMonth)) {
         _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
       }
@@ -81,8 +80,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         builder: (_) => AddDateEventScreen(date: _selectedDate),
       ),
     );
-    // AddDateEventScreen에서 pop할 때 true 반환하도록 바꾸면 더 깔끔하지만,
-    // 지금 구조에서도 provider가 loadMonth 호출해서 반영됨.
+
     if (changed == true && mounted) {
       context.read<DateEventProvider>().loadMonth(_focusedMonth);
     }
@@ -122,7 +120,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: Column(
         children: [
-          // 월 헤더 (iOS 느낌: 좌우 이동 + 가운데 월)
+          // 월 헤더
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
@@ -135,7 +133,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Center(
                     child: Text(
                       monthText,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -167,7 +168,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           // 월 그리드
           AspectRatio(
-            aspectRatio: 7 / 6.2, // iOS처럼 약간 납작
+            aspectRatio: 7 / 6.2,
             child: GridView.builder(
               physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -176,11 +177,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 crossAxisCount: 7,
               ),
               itemBuilder: (context, index) {
-                if (index < blanks) {
-                  return const SizedBox.shrink();
-                }
+                if (index < blanks) return const SizedBox.shrink();
+
                 final dayNum = index - blanks + 1;
-                final day = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
+                final day =
+                DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
 
                 final isToday = _isSameDay(day, DateTime.now());
                 final isSelected = _isSameDay(day, _selectedDate);
@@ -201,7 +202,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           const Divider(height: 1),
 
-          // 아래: 선택 날짜 일정 리스트 (iOS 캘린더처럼)
+          // 아래: 선택 날짜 일정 리스트 (수정/삭제 포함)
           Expanded(
             child: _DayAgenda(
               date: _selectedDate,
@@ -251,10 +252,7 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final bg = isSelected
-        ? theme.colorScheme.primary
-        : Colors.transparent;
-
+    final bg = isSelected ? theme.colorScheme.primary : Colors.transparent;
     final fg = isSelected
         ? theme.colorScheme.onPrimary
         : theme.textTheme.bodyMedium?.color;
@@ -279,7 +277,9 @@ class _DayCell extends StatelessWidget {
                 width: 5,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
+                  color: isSelected
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -311,7 +311,8 @@ class _DayAgenda extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Row(
             children: [
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(title,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               const Spacer(),
               TextButton.icon(
                 onPressed: onAdd,
@@ -330,16 +331,64 @@ class _DayAgenda extends StatelessWidget {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final e = events[i];
-              return ListTile(
-                dense: true,
-                title: Text(e.title),
-                leading: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
+
+              return Dismissible(
+                key: ValueKey(e.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  color: Colors.redAccent,
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (_) async {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('삭제할까요?'),
+                      content: Text(e.title),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('취소'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('삭제'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                onDismissed: (_) async {
+                  await context.read<DateEventProvider>().deleteDateEvent(e);
+                },
+                child: ListTile(
+                  dense: true,
+                  title: Text(e.title),
+                  leading: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
                   ),
+                  onTap: () async {
+                    final changed = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AddDateEventScreen(date: e.date, editing: e),
+                      ),
+                    );
+
+                    if (changed == true && context.mounted) {
+                      context
+                          .read<DateEventProvider>()
+                          .loadMonth(DateTime(e.date.year, e.date.month));
+                    }
+                  },
                 ),
               );
             },

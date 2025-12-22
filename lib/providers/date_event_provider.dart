@@ -27,8 +27,7 @@ class DateEventProvider extends ChangeNotifier {
     return _monthEvents.any((e) =>
     e.date.year == date.year &&
         e.date.month == date.month &&
-        e.date.day == date.day
-    );
+        e.date.day == date.day);
   }
 
   Future<void> addDateEvent(DateTime date, String title) async {
@@ -40,5 +39,26 @@ class DateEventProvider extends ChangeNotifier {
 
     await HiveService.addDateEvent(event);
     loadMonth(date);
+  }
+
+  // ✅ 추가: 수정
+  Future<void> updateDateEvent({
+    required DateEventModel event,
+    required String newTitle,
+  }) async {
+    final updated = DateEventModel(
+      id: event.id,
+      date: event.date,
+      title: newTitle,
+    );
+
+    await HiveService.updateDateEvent(updated);
+    loadMonth(event.date);
+  }
+
+  // ✅ 추가: 삭제
+  Future<void> deleteDateEvent(DateEventModel event) async {
+    await HiveService.deleteDateEvent(event.id);
+    loadMonth(event.date);
   }
 }
