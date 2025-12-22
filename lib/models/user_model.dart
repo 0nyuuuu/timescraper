@@ -1,9 +1,11 @@
 class UserModel {
-  final String id;
-  final String password;
+  final String uid;
+  final String email;
+  final bool emailVerified;
 
   UserModel({
-    required this.id,
-    required this.password,
+    required this.uid,
+    required this.email,
+    required this.emailVerified,
   });
 }

@@ -1,6 +1,6 @@
 name: timescraper
 description: "2025finale"
-publ ish_to: 'none'
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -17,6 +17,8 @@ dependencies:
   intl: ^0.19.0
   qr_flutter: ^4.1.0
   uni_links: ^0.5.1
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
 
 dev_dependencies:
   flutter_test:

@@ -6,8 +6,15 @@ class HiveService {
   static const String eventBoxName = 'events';
   static const String dateEventBoxName = 'date_events';
 
+  // ✅ 추가: 앱 설정 저장 박스 (첫 실행 여부)
+  static const String appBoxName = 'app_settings';
+  static const String firstRunKey = 'first_run';
+
   static late Box<EventModel> eventBox;
   static late Box<DateEventModel> dateEventBox;
+
+  // ✅ 추가: 설정용 박스(타입 없음)
+  static late Box appBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -21,9 +28,28 @@ class HiveService {
 
     eventBox = await Hive.openBox<EventModel>(eventBoxName);
     dateEventBox = await Hive.openBox<DateEventModel>(dateEventBoxName);
+
+    // ✅ 추가: settings box 열기 (first_run 저장용)
+    appBox = await Hive.openBox(appBoxName);
   }
 
-  // 시간표 이벤트
+  // ✅ 추가: 첫 실행 여부 읽기 (기본값 true)
+  static bool isFirstRun() {
+    return appBox.get(firstRunKey, defaultValue: true) as bool;
+  }
+
+  // ✅ 추가: 온보딩 완료 처리
+  static Future<void> setFirstRunFalse() async {
+    await appBox.put(firstRunKey, false);
+  }
+  // hive_service.dart 안
+  static Future<void> debugResetFirstRun() async {
+    await appBox.put(firstRunKey, true);
+  }
+
+  // =========================
+  // 시간표 이벤트 (EventModel)
+  // =========================
   static Future<void> addEvent(EventModel event) async {
     await eventBox.put(event.id, event);
   }
@@ -37,7 +63,9 @@ class HiveService {
         .toList();
   }
 
-  // 날짜 이벤트
+  // =========================
+  // 날짜 이벤트 (DateEventModel)
+  // =========================
   static List<DateEventModel> getDateEventsByMonth(DateTime month) {
     return dateEventBox.values
         .where((e) => e.date.year == month.year && e.date.month == month.month)
@@ -48,16 +76,17 @@ class HiveService {
     await dateEventBox.put(event.id, event);
   }
 
-  // ✅ 추가: 날짜 이벤트 수정
   static Future<void> updateDateEvent(DateEventModel event) async {
     await dateEventBox.put(event.id, event);
   }
 
-  // ✅ 추가: 날짜 이벤트 삭제
   static Future<void> deleteDateEvent(String id) async {
     await dateEventBox.delete(id);
   }
 
+  // =========================
+  // 추천용: 월별 0/1 배열
+  // =========================
   static int _daysInMonth(DateTime month) {
     final last = DateTime(month.year, month.month + 1, 0);
     return last.day;

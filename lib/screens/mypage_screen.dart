@@ -12,7 +12,7 @@ class MyPageScreen extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('아이디: ${user?.id}'),
+        Text('아이디: ${user?.uid}'),
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
