@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "549057023378",
+    "project_id": "timescraper-edd98",
+    "storage_bucket": "timescraper-edd98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549057023378:android:5fdce1b32a4a0bfb20c54b",
+        "android_client_info": {
+          "package_name": "com.example.timescraper.timescraper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJCeIqoKBGdgxQ9tl-JYWa8dv4I_mJBmg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

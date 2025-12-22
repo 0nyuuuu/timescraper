@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBftJTvBS7jia742Jqsshdhoz4sYqlEpXU</string>
+	<key>GCM_SENDER_ID</key>
+	<string>549057023378</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.timescraper.timescraper</string>
+	<key>PROJECT_ID</key>
+	<string>timescraper-edd98</string>
+	<key>STORAGE_BUCKET</key>
+	<string>timescraper-edd98.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:549057023378:ios:d469b7111d0faf9f20c54b</string>
+</dict>
+</plist>

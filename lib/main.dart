@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'services/hive_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'app.dart';
@@ -12,14 +13,10 @@ Future<void> main() async {
 
   await initializeDateFormatting('ko_KR', null);
 
-  // ✅ Firebase 미설정 상태에서도 앱이 죽지 않게 처리
-  bool firebaseReady = false;
-  try {
-    await Firebase.initializeApp();
-    firebaseReady = true;
-  } catch (_) {
-    firebaseReady = false;
-  }
+  bool firebaseReady = true;
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(TimeScraperApp(firebaseReady: firebaseReady));
 }
