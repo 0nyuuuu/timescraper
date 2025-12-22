@@ -57,4 +57,37 @@ class HiveService {
   static Future<void> deleteDateEvent(String id) async {
     await dateEventBox.delete(id);
   }
+
+  static int _daysInMonth(DateTime month) {
+    final last = DateTime(month.year, month.month + 1, 0);
+    return last.day;
+  }
+
+  /// ✅ 추천용: 월별 0/1 배열
+  /// 1 = 그 날에 뭔가 일정이 있음(날짜 일정 or 시간 일정)
+  /// 0 = 그 날에 일정이 없음
+  /// index 0 -> 1일, index day-1 -> day일
+  static List<int> getBusyArrayByMonth(DateTime month) {
+    final m = DateTime(month.year, month.month);
+    final days = _daysInMonth(m);
+    final result = List<int>.filled(days, 0);
+
+    // 날짜 일정(DateEventModel)
+    for (final e in dateEventBox.values) {
+      if (e.date.year == m.year && e.date.month == m.month) {
+        final d = e.date.day;
+        if (d >= 1 && d <= days) result[d - 1] = 1;
+      }
+    }
+
+    // 시간 일정(EventModel)
+    for (final e in eventBox.values) {
+      if (e.date.year == m.year && e.date.month == m.month) {
+        final d = e.date.day;
+        if (d >= 1 && d <= days) result[d - 1] = 1;
+      }
+    }
+
+    return result;
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:timescraper/providers/month_busy_provider.dart';
 import 'package:timescraper/utils/deep_link_handler.dart';
 
 import 'providers/auth_provider.dart';
@@ -45,6 +46,7 @@ class _TimeScraperAppState extends State<TimeScraperApp> {
         ChangeNotifierProvider(create: (_) => InviteEventProvider()),
         ChangeNotifierProvider(create: (_) => InviteProvider()),
         ChangeNotifierProvider(create: (_) => InviteLinkProvider()),
+        ChangeNotifierProvider(create: (_) => MonthBusyProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {

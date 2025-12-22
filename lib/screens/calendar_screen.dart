@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/date_event_provider.dart';
+import '../providers/month_busy_provider.dart';
 import '../models/date_event_model.dart';
 import 'add_date_event_screen.dart';
 
@@ -26,6 +27,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     Future.microtask(() {
       context.read<DateEventProvider>().loadMonth(_focusedMonth);
+      context.read<MonthBusyProvider>().loadMonth(_focusedMonth);
     });
   }
 
