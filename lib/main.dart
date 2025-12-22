@@ -9,7 +9,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await HiveService.init();
-  // await HiveService.debugResetFirstRun(); // 테스트 끝나면 삭제
+  await HiveService.debugResetFirstRun(); // 테스트 끝나면 삭제
 
   await initializeDateFormatting('ko_KR', null);
 

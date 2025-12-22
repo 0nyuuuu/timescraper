@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:timescraper/screens/home_screen.dart';
 import 'package:timescraper/screens/login_screen.dart';
+import 'package:timescraper/screens/verify_email_screen.dart';
+
 import '../../services/hive_service.dart';
+import '../../providers/auth_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -12,6 +17,9 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _index = 0;
+
+  // ✅ '다시 보지 않기' (기본 true 추천)
+  bool _dontShowAgain = true;
 
   final _pages = const [
     _OnboardingPage(
@@ -29,11 +37,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   Future<void> _finish() async {
-    await HiveService.setFirstRunFalse();
+    // ✅ 다시 보지 않기 ON이면 first_run=false 저장
+    if (_dontShowAgain) {
+      await HiveService.setFirstRunFalse();
+    }
+
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+
+    final auth = context.read<AuthProvider>();
+
+    Widget next;
+    if (!auth.isLoggedIn) {
+      next = const LoginScreen();
+    } else if (!auth.isEmailVerified) {
+      next = const VerifyEmailScreen();
+    } else {
+      next = const HomeScreen();
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => next),
+          (_) => false,
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,6 +82,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: _pages,
               ),
             ),
+
+            // ✅ 다시 보지 않기
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _dontShowAgain,
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _dontShowAgain = v);
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  const Text('다시 보지 않기'),
+                  const Spacer(),
+                ],
+              ),
+            ),
+
+            // 하단 버튼
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Row(
