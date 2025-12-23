@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/date_event_provider.dart';
-import '../providers/month_busy_provider.dart';
-import '../models/date_event_model.dart';
-import 'add_date_event_screen.dart';
+import '../providers/appointment_provider.dart';
+import '../models/appointment.dart';
+import 'add_appointment_screen.dart';
+import 'edit_appointment_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -15,94 +15,85 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  late DateTime _focusedMonth;
+  DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   late DateTime _selectedDate;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _focusedMonth = DateTime(now.year, now.month);
     _selectedDate = DateTime(now.year, now.month, now.day);
 
     Future.microtask(() {
-      context.read<DateEventProvider>().loadMonth(_focusedMonth);
-      context.read<MonthBusyProvider>().loadMonth(_focusedMonth);
+      context.read<AppointmentProvider>().loadMonth(_focusedMonth);
     });
   }
 
-  void _loadMonth(DateTime month) {
-    _focusedMonth = DateTime(month.year, month.month);
-    context.read<DateEventProvider>().loadMonth(_focusedMonth);
+  int _firstWeekdayOfMonth(DateTime month) {
+    final first = DateTime(month.year, month.month, 1);
+    return first.weekday % 7; // Sun=0
   }
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  bool _isSameMonth(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month;
 
   int _daysInMonth(DateTime month) {
     final last = DateTime(month.year, month.month + 1, 0);
     return last.day;
   }
 
-  /// iOS처럼 1일이 무슨 요일인지에 따라 앞에 빈 칸 채우기 (일=0..토=6)
-  int _leadingBlankCount(DateTime month) {
-    final first = DateTime(month.year, month.month, 1);
-    return first.weekday % 7; // DateTime.weekday: 월=1..일=7 → 일=0으로
-  }
-
-  void _prevMonth() {
+  void _changeMonth(int offset) {
     setState(() {
-      final prev = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
-      _focusedMonth = DateTime(prev.year, prev.month);
-      if (!_isSameMonth(_selectedDate, _focusedMonth)) {
-        _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-      }
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + offset);
+
+      // ✅ 선택일이 새 월 밖이면 1일로 이동
+      final candidate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+      _selectedDate = candidate;
     });
-    _loadMonth(_focusedMonth);
+    context.read<AppointmentProvider>().loadMonth(_focusedMonth);
   }
 
-  void _nextMonth() {
-    setState(() {
-      final next = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
-      _focusedMonth = DateTime(next.year, next.month);
-      if (!_isSameMonth(_selectedDate, _focusedMonth)) {
-        _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-      }
-    });
-    _loadMonth(_focusedMonth);
-  }
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
-  Future<void> _goAdd() async {
-    final changed = await Navigator.push(
+  Future<void> _openAdd() async {
+    final changed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => AddDateEventScreen(date: _selectedDate),
-      ),
+      MaterialPageRoute(builder: (_) => AddAppointmentScreen(date: _selectedDate)),
     );
-
     if (changed == true && mounted) {
-      context.read<DateEventProvider>().loadMonth(_focusedMonth);
+      context.read<AppointmentProvider>().loadMonth(_focusedMonth);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<DateEventProvider>();
+    final provider = context.watch<AppointmentProvider>();
     final monthText = DateFormat('yyyy년 M월').format(_focusedMonth);
 
-    final blanks = _leadingBlankCount(_focusedMonth);
-    final days = _daysInMonth(_focusedMonth);
-    final gridCount = blanks + days;
+    final firstOffset = _firstWeekdayOfMonth(_focusedMonth);
+    final dayCount = _daysInMonth(_focusedMonth);
+    final gridCount = firstOffset + dayCount;
 
-    final selectedEvents = provider.eventsOf(_selectedDate);
+    final list = provider.appointmentsOf(_selectedDate);
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('캘린더'),
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              monthText, // 예: 2025년 3월
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
         actions: [
+          // ✅ 오늘 버튼
           TextButton(
             onPressed: () {
               final now = DateTime.now();
@@ -110,106 +101,189 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 _focusedMonth = DateTime(now.year, now.month);
                 _selectedDate = DateTime(now.year, now.month, now.day);
               });
-              _loadMonth(_focusedMonth);
+              context.read<AppointmentProvider>().loadMonth(_focusedMonth);
             },
             child: const Text('오늘'),
           ),
+
           IconButton(
-            onPressed: _goAdd,
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => _changeMonth(-1),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () => _changeMonth(1),
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
+            onPressed: _openAdd,
           ),
         ],
       ),
       body: Column(
         children: [
-          // 월 헤더
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: _prevMonth,
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      monthText,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: _nextMonth,
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 8),
 
           // 요일
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
             child: Row(
-              children: const [
-                _DowCell('일', isWeekend: true),
-                _DowCell('월'),
-                _DowCell('화'),
-                _DowCell('수'),
-                _DowCell('목'),
-                _DowCell('금'),
-                _DowCell('토', isWeekend: true),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _Weekday('일'), _Weekday('월'), _Weekday('화'),
+                _Weekday('수'), _Weekday('목'), _Weekday('금'), _Weekday('토'),
               ],
             ),
           ),
-
           const SizedBox(height: 6),
 
           // 월 그리드
-          AspectRatio(
-            aspectRatio: 7 / 6.2,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: GridView.builder(
+              shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
               itemCount: gridCount,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                childAspectRatio: 1.05,
               ),
               itemBuilder: (context, index) {
-                if (index < blanks) return const SizedBox.shrink();
+                if (index < firstOffset) return const SizedBox.shrink();
 
-                final dayNum = index - blanks + 1;
-                final day =
-                DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
+                final day = index - firstOffset + 1;
+                final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
 
-                final isToday = _isSameDay(day, DateTime.now());
-                final isSelected = _isSameDay(day, _selectedDate);
-                final hasEvent = provider.hasEvent(day);
+                final isSelected = _isSameDay(date, _selectedDate);
+                final isToday = _isSameDay(date, todayDate);
+                final hasAppt = provider.hasAppointment(date);
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedDate = day),
-                  child: _DayCell(
-                    day: dayNum,
-                    isToday: isToday,
-                    isSelected: isSelected,
-                    hasEvent: hasEvent,
+                  onTap: () => setState(() => _selectedDate = date),
+                  onLongPress: () async {
+                    // ✅ iOS 느낌: 길게 눌러 추가(선택 날짜에)
+                    setState(() => _selectedDate = date);
+                    await _openAdd();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
+                          : null,
+                      borderRadius: BorderRadius.circular(10),
+                      // ✅ 오늘 표시: 선택이 아니어도 테두리로 표시
+                      border: isToday && !isSelected
+                          ? Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.65),
+                        width: 1.4,
+                      )
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$day',
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                            color: isToday && !isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (hasAppt)
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
 
+          const SizedBox(height: 10),
           const Divider(height: 1),
 
-          // 아래: 선택 날짜 일정 리스트 (수정/삭제 포함)
+          // 아래 리스트 (선택 날짜 약속)
           Expanded(
-            child: _DayAgenda(
-              date: _selectedDate,
-              events: selectedEvents,
-              onAdd: _goAdd,
+            child: list.isEmpty
+                ? Center(
+              child: Text(
+                '${_selectedDate.month}월 ${_selectedDate.day}일 약속 없음',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            )
+                : ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: list.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                final a = list[i];
+
+                // ✅ iOS 느낌: 스와이프 삭제
+                return Dismissible(
+                  key: ValueKey(a.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('삭제할까요?'),
+                        content: Text('“${a.title}” 약속을 삭제합니다.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('취소'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('삭제'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return ok == true;
+                  },
+                  onDismissed: (_) async {
+                    await context.read<AppointmentProvider>().delete(a);
+                  },
+                  child: _AppointmentTile(
+                    appt: a,
+                    onTap: () async {
+                      final changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditAppointmentScreen(appointment: a),
+                        ),
+                      );
+                      if (changed == true && mounted) {
+                        provider.loadMonth(_focusedMonth);
+                      }
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -218,185 +292,72 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 }
 
-class _DowCell extends StatelessWidget {
-  final String text;
-  final bool isWeekend;
-  const _DowCell(this.text, {this.isWeekend = false});
+class _Weekday extends StatelessWidget {
+  final String label;
+  const _Weekday(this.label);
 
   @override
   Widget build(BuildContext context) {
-    final color = isWeekend ? Colors.redAccent : Theme.of(context).hintColor;
-    return Expanded(
+    return SizedBox(
+      width: 24,
       child: Center(
         child: Text(
-          text,
-          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
         ),
       ),
     );
   }
 }
 
-class _DayCell extends StatelessWidget {
-  final int day;
-  final bool isToday;
-  final bool isSelected;
-  final bool hasEvent;
+class _AppointmentTile extends StatelessWidget {
+  final Appointment appt;
+  final VoidCallback onTap;
 
-  const _DayCell({
-    required this.day,
-    required this.isToday,
-    required this.isSelected,
-    required this.hasEvent,
+  const _AppointmentTile({
+    required this.appt,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final timeText = '${appt.hour.toString().padLeft(2, '0')}:00';
 
-    final bg = isSelected ? theme.colorScheme.primary : Colors.transparent;
-    final fg = isSelected
-        ? theme.colorScheme.onPrimary
-        : theme.textTheme.bodyMedium?.color;
-
-    return Container(
-      margin: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(10),
-        border: isToday && !isSelected
-            ? Border.all(color: theme.colorScheme.primary, width: 1.2)
-            : null,
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Text('$day', style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
-          if (hasEvent)
-            Positioned(
-              bottom: 6,
-              child: Container(
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DayAgenda extends StatelessWidget {
-  final DateTime date;
-  final List<DateEventModel> events;
-  final VoidCallback onAdd;
-
-  const _DayAgenda({
-    required this.date,
-    required this.events,
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final title = DateFormat('M월 d일 (E)', 'ko_KR').format(date);
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.6)),
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: Row(
             children: [
-              Text(title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add),
-                label: const Text('추가'),
-              )
+              SizedBox(
+                width: 60,
+                child: Text(
+                  timeText,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  appt.title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
             ],
           ),
         ),
-        Expanded(
-          child: events.isEmpty
-              ? const Center(child: Text('일정이 없습니다'))
-              : ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            itemCount: events.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final e = events[i];
-
-              return Dismissible(
-                key: ValueKey(e.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  color: Colors.redAccent,
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                confirmDismiss: (_) async {
-                  return await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('삭제할까요?'),
-                      content: Text(e.title),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('취소'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('삭제'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                onDismissed: (_) async {
-                  await context.read<DateEventProvider>().deleteDateEvent(e);
-                },
-                child: ListTile(
-                  dense: true,
-                  title: Text(e.title),
-                  leading: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  onTap: () async {
-                    final changed = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            AddDateEventScreen(date: e.date, editing: e),
-                      ),
-                    );
-
-                    if (changed == true && context.mounted) {
-                      context
-                          .read<DateEventProvider>()
-                          .loadMonth(DateTime(e.date.year, e.date.month));
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

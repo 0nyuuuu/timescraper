@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:timescraper/providers/appointment_provider.dart';
 import 'package:timescraper/providers/month_busy_provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/weekly_routine_provider.dart';
 import 'providers/weekly_timetable_provider.dart';
 import 'providers/event_provider.dart';
-import 'providers/date_event_provider.dart';
 import 'providers/invite_event_provider.dart';
 import 'providers/invite_provider.dart';
 import 'providers/invite_link_provider.dart';
@@ -44,7 +44,7 @@ class _TimeScraperAppState extends State<TimeScraperApp> {
         ChangeNotifierProvider(create: (_) => WeeklyTimetableProvider()),
         ChangeNotifierProvider(create: (_) => WeeklyRoutineProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
-        ChangeNotifierProvider(create: (_) => DateEventProvider()),
+        ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => InviteEventProvider()),
         ChangeNotifierProvider(create: (_) => InviteProvider()),
         ChangeNotifierProvider(create: (_) => InviteLinkProvider()),
