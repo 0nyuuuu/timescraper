@@ -139,6 +139,7 @@ class CreateAppointmentScreen extends StatelessWidget {
                     startHour: 9,
                     endHour: 18,
                     inviterId: auth.user!.uid,
+                    inviteId: inviteId,
                   );
                   final link = InvitePayload.buildInviteLink(payload: payload);
 

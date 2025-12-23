@@ -41,6 +41,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>ㅌ
+        <key>com.example.timescraper</key>
+        <string>com.example.timescraper</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>timescraper</string>
+        </array>
+      </dict>
+    </array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
