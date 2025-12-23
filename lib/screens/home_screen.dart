@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:timescraper/screens/create_event_screen.dart';
+import 'package:timescraper/screens/create_appointment_screen.dart';
 import 'calendar_screen.dart';
 import 'timetable_screen.dart';
 import 'mypage_screen.dart';
@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final screens = const [
     CalendarScreen(),
     TimetableScreen(),
-    CreateEventScreen(),
+    CreateAppointmentScreen(),
     MyPageScreen(),
   ];
 
