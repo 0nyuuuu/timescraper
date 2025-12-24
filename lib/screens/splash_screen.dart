@@ -5,6 +5,7 @@ import 'package:timescraper/screens/onboarding_screen.dart';
 
 import '../providers/auth_provider.dart';
 import '../services/hive_service.dart';
+import '../utils/deep_link_handler.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 
@@ -18,6 +19,23 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   static const _delay = Duration(milliseconds: 1300);
   bool _routed = false;
+  bool _deeplinkInited = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // ✅ Provider 아래에서 딱 1번만 init
+    if (!_deeplinkInited) {
+      _deeplinkInited = true;
+
+      // ✅ Navigator/Provider 안정화 이후에 init (중요)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        DeepLinkHandler.init(context);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -46,6 +64,13 @@ class _SplashScreenState extends State<SplashScreen> {
         builder: (_) => isLoggedIn ? const HomeScreen() : const LoginScreen(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // ✅ 앱이 완전 종료되거나 트리가 내려가면 구독 해제
+    DeepLinkHandler.dispose();
+    super.dispose();
   }
 
   @override

@@ -14,28 +14,32 @@ class HiveService {
   static const String appBoxName = 'app_settings';
   static const String firstRunKey = 'first_run';
 
+  // ✅ 마이페이지 설정 키
+  static const String showWeekendKey = 'show_weekend';
+  static const String showFullDayKey = 'show_full_day';
+
+  // ✅ 닉네임 키 (유저별 저장)
+  static String nicknameKey(String uid) => 'nickname_$uid';
+
   static late Box<EventModel> eventBox;
   static late Box<Appointment> appointmentBox;
-
-  // 설정용 박스(타입 없음)
   static late Box appBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
 
-    // typeId 0: EventModel (기존)
+    // typeId 0: EventModel
     if (!Hive.isAdapterRegistered(0)) {
       Hive.registerAdapter(EventModelAdapter());
     }
 
-    // typeId 2: Appointment
-    if (!Hive.isAdapterRegistered(2)) {
+    // ✅ Appointment: typeId 10
+    if (!Hive.isAdapterRegistered(10)) {
       Hive.registerAdapter(AppointmentAdapter());
     }
 
     eventBox = await Hive.openBox<EventModel>(eventBoxName);
     appointmentBox = await Hive.openBox<Appointment>(appointmentBoxName);
-
     appBox = await Hive.openBox(appBoxName);
   }
 
@@ -55,6 +59,33 @@ class HiveService {
   }
 
   // =========================
+  // ✅ Settings (시간표 옵션)
+  // =========================
+  static bool getShowWeekend() =>
+      appBox.get(showWeekendKey, defaultValue: false) as bool;
+
+  static bool getShowFullDay() =>
+      appBox.get(showFullDayKey, defaultValue: false) as bool;
+
+  static Future<void> setShowWeekend(bool v) async {
+    await appBox.put(showWeekendKey, v);
+  }
+
+  static Future<void> setShowFullDay(bool v) async {
+    await appBox.put(showFullDayKey, v);
+  }
+
+  // =========================
+  // ✅ Nickname (유저별)
+  // =========================
+  static String getNickname(String uid) =>
+      (appBox.get(nicknameKey(uid), defaultValue: '') as String);
+
+  static Future<void> setNickname(String uid, String nickname) async {
+    await appBox.put(nicknameKey(uid), nickname);
+  }
+
+  // =========================
   // 시간표 이벤트 (EventModel)
   // =========================
   static Future<void> addEvent(EventModel event) async {
@@ -71,7 +102,7 @@ class HiveService {
   }
 
   // =========================
-  // ✅ 약속(Appointment) - 캘린더 표시
+  // ✅ 약속(Appointment)
   // =========================
   static Future<void> addAppointment(Appointment appt) async {
     await appointmentBox.put(appt.id, appt);
@@ -107,15 +138,13 @@ class HiveService {
   }
 
   // =========================
-  // 추천용: 월별 0/1 배열 (Appointment 기준)
+  // 추천용: 월별 0/1 배열
   // =========================
   static int _daysInMonth(DateTime month) {
     final last = DateTime(month.year, month.month + 1, 0);
     return last.day;
   }
 
-  /// 1 = 그 날에 약속(Appointment)이 있음
-  /// 0 = 없음
   static List<int> getBusyArrayByMonth(DateTime month) {
     final m = DateTime(month.year, month.month);
     final days = _daysInMonth(m);
@@ -127,7 +156,6 @@ class HiveService {
         if (d >= 1 && d <= days) result[d - 1] = 1;
       }
     }
-
     return result;
   }
 }

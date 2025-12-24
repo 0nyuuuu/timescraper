@@ -31,7 +31,7 @@ class _TimeScraperAppState extends State<TimeScraperApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkHandler.init(context);
+      // DeepLinkHandler.init(context);
     });
   }
 

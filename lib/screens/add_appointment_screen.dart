@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/appointment.dart';
 import '../providers/appointment_provider.dart';
+import '../providers/auth_provider.dart';
 
 class AddAppointmentScreen extends StatefulWidget {
   final DateTime date;
@@ -25,6 +26,14 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   }
 
   Future<void> _save() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인 후 사용할 수 있어요.')),
+      );
+      return;
+    }
+
     final title = _title.text.trim();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,6 +50,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         hour: _hour,
         title: title,
         participants: const [],
+        creatorId: auth.user!.uid, // ✅ 추가
       );
 
       await context.read<AppointmentProvider>().add(appt);
@@ -72,10 +82,12 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
               value: _hour,
               decoration: const InputDecoration(labelText: '시간'),
               items: List.generate(24, (i) => i)
-                  .map((h) => DropdownMenuItem(
-                value: h,
-                child: Text('${h.toString().padLeft(2, '0')}:00'),
-              ))
+                  .map(
+                    (h) => DropdownMenuItem(
+                  value: h,
+                  child: Text('${h.toString().padLeft(2, '0')}:00'),
+                ),
+              )
                   .toList(),
               onChanged: _busy ? null : (v) => setState(() => _hour = v ?? _hour),
             ),

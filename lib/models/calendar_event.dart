@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'calendar_event.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 1)
 class CalendarEvent extends HiveObject {
   @HiveField(0)
   String id;

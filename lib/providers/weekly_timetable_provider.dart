@@ -5,7 +5,7 @@ class TimeBlock {
   final String id;
   final int weekday; // 1=월 ... 7=일
   final int startIndex; // 0..slotCount-1
-  final int endIndex;   // inclusive
+  final int endIndex; // inclusive
   final String label;
 
   const TimeBlock({
@@ -54,10 +54,20 @@ class WeeklyTimetableProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// ✅ 마이페이지에서 Hive 읽어서 한 번에 적용할 때 사용
+  void applySettings({required bool showWeekend, required bool showFullDay}) {
+    _showWeekend = showWeekend;
+    _showFullDay = showFullDay;
+    _ensureTables();
+    _rebuildTable();
+    notifyListeners();
+  }
+
   // ===== 시간 설정 =====
   int get startHour => _showFullDay ? 0 : 9;
   int get slotCount => _showFullDay ? 24 : 12; // 시간 단위
-  List<int> get visibleWeekdays => _showWeekend ? const [1,2,3,4,5,6,7] : const [1,2,3,4,5];
+  List<int> get visibleWeekdays =>
+      _showWeekend ? const [1, 2, 3, 4, 5, 6, 7] : const [1, 2, 3, 4, 5];
 
   // ===== 데이터 =====
   /// [weekday(1..7)] -> List<int>(0/1)
@@ -69,6 +79,7 @@ class WeeklyTimetableProvider extends ChangeNotifier {
 
   WeeklyTimetableProvider() {
     _ensureTables();
+    _rebuildTable();
   }
 
   void _ensureTables() {
@@ -148,8 +159,7 @@ class WeeklyTimetableProvider extends ChangeNotifier {
 
     // 겹치면 덮어쓰기 정책
     _blocks.removeWhere((b) =>
-    b.weekday == weekday &&
-        !(max < b.startIndex || min > b.endIndex));
+    b.weekday == weekday && !(max < b.startIndex || min > b.endIndex));
 
     _blocks.add(TimeBlock(
       id: const Uuid().v4(),
@@ -184,14 +194,22 @@ class WeeklyTimetableProvider extends ChangeNotifier {
 
   String weekdayLabel(int weekday) {
     switch (weekday) {
-      case 1: return '월';
-      case 2: return '화';
-      case 3: return '수';
-      case 4: return '목';
-      case 5: return '금';
-      case 6: return '토';
-      case 7: return '일';
-      default: return '';
+      case 1:
+        return '월';
+      case 2:
+        return '화';
+      case 3:
+        return '수';
+      case 4:
+        return '목';
+      case 5:
+        return '금';
+      case 6:
+        return '토';
+      case 7:
+        return '일';
+      default:
+        return '';
     }
   }
 

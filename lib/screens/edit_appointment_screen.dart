@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/appointment.dart';
 import '../providers/appointment_provider.dart';
+import '../providers/auth_provider.dart';
 
 class EditAppointmentScreen extends StatefulWidget {
   final Appointment appointment;
@@ -30,6 +32,14 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
   }
 
   Future<void> _save() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인 후 사용할 수 있어요.')),
+      );
+      return;
+    }
+
     setState(() => _busy = true);
     try {
       final updated = Appointment(
@@ -38,9 +48,11 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
         hour: _hour,
         title: _title.text.trim().isEmpty ? widget.appointment.title : _title.text.trim(),
         participants: widget.appointment.participants,
+        creatorId: widget.appointment.creatorId, // ✅ 유지 (중요)
       );
 
       await context.read<AppointmentProvider>().update(updated);
+
       if (!mounted) return;
       Navigator.pop(context, true);
     } finally {
@@ -64,19 +76,25 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
     if (ok != true) return;
 
     await context.read<AppointmentProvider>().delete(widget.appointment);
+
     if (!mounted) return;
     Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final appt = widget.appointment;
+    final auth = context.watch<AuthProvider>();
+
+    final canEdit = auth.isLoggedIn && auth.user!.uid == appt.creatorId;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('약속 수정'),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: _busy ? null : _delete,
+            onPressed: (_busy || !canEdit) ? null : _delete,
           ),
         ],
       ),
@@ -84,27 +102,40 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('${widget.appointment.date.month}월 ${widget.appointment.date.day}일'),
+            Text('${appt.date.month}월 ${appt.date.day}일'),
+            if (!canEdit) ...[
+              const SizedBox(height: 8),
+              Text(
+                '내가 만든 약속만 수정/삭제할 수 있어요.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             TextField(
               controller: _title,
               decoration: const InputDecoration(labelText: '제목'),
+              enabled: canEdit && !_busy,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               value: _hour,
               decoration: const InputDecoration(labelText: '시간'),
               items: List.generate(24, (i) => i)
-                  .map((h) => DropdownMenuItem(
-                value: h,
-                child: Text('${h.toString().padLeft(2, '0')}:00'),
-              ))
+                  .map(
+                    (h) => DropdownMenuItem(
+                  value: h,
+                  child: Text('${h.toString().padLeft(2, '0')}:00'),
+                ),
+              )
                   .toList(),
-              onChanged: _busy ? null : (v) => setState(() => _hour = v ?? _hour),
+              onChanged: (!canEdit || _busy) ? null : (v) => setState(() => _hour = v ?? _hour),
             ),
             const Spacer(),
             FilledButton(
-              onPressed: _busy ? null : _save,
+              onPressed: (_busy || !canEdit) ? null : _save,
               child: Text(_busy ? '저장 중...' : '저장'),
             ),
           ],
