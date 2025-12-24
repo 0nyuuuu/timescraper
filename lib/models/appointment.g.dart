@@ -29,7 +29,7 @@ class AppointmentAdapter extends TypeAdapter<Appointment> {
   @override
   void write(BinaryWriter writer, Appointment obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(6) // ✅ 5 -> 6
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +50,7 @@ class AppointmentAdapter extends TypeAdapter<Appointment> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AppointmentAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+          other is AppointmentAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
 }

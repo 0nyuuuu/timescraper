@@ -27,7 +27,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
   Future<void> _save() async {
     final auth = context.read<AuthProvider>();
-    if (!auth.isLoggedIn) {
+    final myUid = auth.user?.uid;
+
+    // ✅ 로그인 유저만 creatorId를 제대로 저장
+    if (myUid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 후 사용할 수 있어요.')),
       );
@@ -50,7 +53,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         hour: _hour,
         title: title,
         participants: const [],
-        creatorId: auth.user!.uid, // ✅ 추가
+        creatorId: myUid, // ✅ 추가된 필드
       );
 
       await context.read<AppointmentProvider>().add(appt);

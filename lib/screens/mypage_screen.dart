@@ -57,6 +57,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
       );
 
       // 4) 화면 상태 반영 (setState는 여기서만)
+      if (!mounted) return;
       setState(() {
         _showWeekend = showWeekend;
         _showFullDay = showFullDay;
@@ -87,10 +88,11 @@ class _MyPageScreenState extends State<MyPageScreen> {
       case _ApptFilter.all:
         return source;
       case _ApptFilter.createdByMe:
-      // ✅ creatorId 기반 (Appointment에 creatorId 필드가 있어야 함)
+      // ✅ creatorId 기반
         return source.where((a) => a.creatorId == myUid).toList();
       case _ApptFilter.joined:
-      // ✅ “참여한” = participants에 내 uid 포함 (만든 약속도 포함될 수 있음)
+      // ✅ “참여한” = participants에 내 uid 포함
+      // (내가 만든 약속도 participants에 내 uid가 포함되면 여기에도 뜰 수 있음)
         return source.where((a) => a.participants.contains(myUid)).toList();
     }
   }
@@ -154,7 +156,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
                       ),
                       const SizedBox(width: 10),
                       FilledButton(
-                        onPressed: _savingNick ? null : () => _saveNickname(user.uid),
+                        onPressed:
+                        _savingNick ? null : () => _saveNickname(user.uid),
                         child: Text(_savingNick ? '저장중' : '저장'),
                       ),
                     ],
@@ -165,7 +168,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     style: TextStyle(
                       color: user.emailVerified
                           ? Colors.green
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -246,7 +252,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 child: Text(
                   '표시할 약속이 없어요.',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                   ),
                 ),
               ),

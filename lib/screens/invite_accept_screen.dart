@@ -125,7 +125,6 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
   }) async {
     final id = const Uuid().v4();
 
-    // Appointment.date는 "날짜" 기준으로 저장(시간은 hour 필드)
     final dateOnly = DateTime(date.year, date.month, date.day);
 
     final appt = Appointment(
@@ -134,7 +133,7 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
       hour: hour,
       title: title,
       participants: [inviterId, myUid],
-      creatorId: myUid, // ✅ 추가: 이 기기에서 생성한 사람 = creator
+      creatorId: myUid, // ✅ 필수
     );
 
     await HiveService.addAppointment(appt);
