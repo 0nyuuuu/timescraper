@@ -1,12 +1,18 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:crypto/crypto.dart';
+
 import '../models/invite_event_model.dart';
 
 class InvitePayload {
   // ⚠️ 데모용 시크릿. 나중에 서버/Remote Config로 옮기는 게 정석.
   static const String _secret = 'TIMESCRAPER_INVITE_SECRET_CHANGE_ME';
+
+  /// ✅ 딥링크에서 data 파라미터 추출
+  /// timescraper://invite?data=xxxx
+  static String? parseInviteData(Uri uri) {
+    return uri.queryParameters['data'];
+  }
 
   /// nonce 생성 (base64url)
   static String _nonce() {
@@ -34,7 +40,7 @@ class InvitePayload {
   }
 
   /// payload 본문 생성 (signature 제외)
-  /// ✅ inviteId를 포함 (Firestore 세션키)
+  /// ✅ inviteId 포함 (Firestore 세션키)
   static Map<String, dynamic> buildUnsigned({
     required DateTime startDate,
     required DateTime endDate,
@@ -125,7 +131,8 @@ class InvitePayload {
 
   /// ✅ payload -> InviteEvent 변환
   static InviteEvent toInviteEvent(Map<String, dynamic> payload) {
-    final inviteId = (payload['inviteId'] as String?) ?? (payload['nonce'] as String?) ?? 'unknown';
+    final inviteId =
+        (payload['inviteId'] as String?) ?? (payload['nonce'] as String?) ?? 'unknown';
 
     final range = payload['range'];
     if (range is! Map) throw FormatException('range is missing');
@@ -144,8 +151,14 @@ class InvitePayload {
     );
   }
 
-  /// 딥링크 생성
-  /// 예) timescraper://invite?data=xxxxx
+  /// ✅ inviterId 추출
+  static String inviterIdOf(Map<String, dynamic> payload) {
+    final v = payload['inviterId'];
+    if (v is String && v.isNotEmpty) return v;
+    throw FormatException('inviterId missing');
+  }
+
+  /// 딥링크 생성: timescraper://invite?data=xxxxx
   static String buildInviteLink({
     required Map<String, dynamic> payload,
     String scheme = 'timescraper',

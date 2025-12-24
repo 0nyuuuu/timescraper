@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:timescraper/providers/auth_provider.dart';
+import 'package:timescraper/screens/login_screen.dart';
+
 import 'package:timescraper/screens/create_appointment_screen.dart';
 import 'calendar_screen.dart';
 import 'timetable_screen.dart';
@@ -20,6 +25,25 @@ class _HomeScreenState extends State<HomeScreen> {
     CreateAppointmentScreen(),
     MyPageScreen(),
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // ✅ 권장: authStateChanges()로 user가 null이 되는 순간(로그아웃 포함)
+    // 홈 어디에 있든 로그인 화면으로 스택 초기화 이동
+    final auth = context.watch<AuthProvider>();
+    if (!auth.loading && !auth.isLoggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
