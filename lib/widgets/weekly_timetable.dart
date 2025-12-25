@@ -10,9 +10,9 @@ class WeeklyTimetable extends StatefulWidget {
 }
 
 class _WeeklyTimetableState extends State<WeeklyTimetable> {
-  static const double hourColumnWidth = 64;
-  static const double headerHeight = 44;
-  static const double rowHeight = 44;
+  static const double hourColumnWidth = 52;  // ✅ 더 얇게
+  static const double headerHeight = 46;
+  static const double rowHeight = 60;        // ✅ 블록 더 크게
 
   int? dragWeekday; // 1..7
   int? dragStartIndex;
@@ -44,7 +44,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
     final result = await showDialog<_EditResult>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(isEdit ? '일정 수정' : '일정 추가'),
+        title: Text(isEdit ? '수정' : '추가'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +53,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(labelText: '라벨/제목'),
+              decoration: const InputDecoration(labelText: '제목'),
               autofocus: true,
             ),
           ],
@@ -68,7 +68,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
             onPressed: () => Navigator.pop(context, _EditResult.cancel()),
             child: const Text('취소'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
               final text = controller.text.trim();
               if (text.isEmpty) return;
@@ -112,9 +112,12 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final provider = context.watch<WeeklyTimetableProvider>();
     final weekdays = provider.visibleWeekdays;
     final slotCount = provider.slotCount;
+
+    final gridLine = theme.dividerColor.withOpacity(0.75);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -139,19 +142,29 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
 
         return Column(
           children: [
-            // Header
+            // ===== Header =====
             SizedBox(
               height: headerHeight,
               child: Row(
                 children: [
-                  const SizedBox(width: hourColumnWidth),
+                  SizedBox(
+                    width: hourColumnWidth,
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Text(
+                        '',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ),
+                  ),
                   ...weekdays.map((w) {
                     return SizedBox(
                       width: dayWidth,
                       child: Center(
                         child: Text(
                           provider.weekdayLabel(w),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
                     );
@@ -160,17 +173,17 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
               ),
             ),
 
-            // Body
+            // ===== Body =====
             Expanded(
               child: SingleChildScrollView(
                 child: SizedBox(
                   height: gridHeight,
                   child: Stack(
                     children: [
-                      // base grid
+                      // Base grid
                       Row(
                         children: [
-                          // hour column
+                          // Hour column (작게 + 좌측 경계선)
                           SizedBox(
                             width: hourColumnWidth,
                             child: Column(
@@ -178,18 +191,30 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                                 final hour = provider.startHour + i;
                                 return SizedBox(
                                   height: rowHeight,
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 12),
-                                      child: Text('$hour'),
+                                  child: Container(
+                                    alignment: Alignment.topLeft,
+                                    padding: const EdgeInsets.only(left: 8, top: 6),
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        right: BorderSide(color: gridLine),
+                                        bottom: BorderSide(color: gridLine),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      hour.toString().padLeft(2, '0'),
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        fontSize: 11,
+                                        color: theme.colorScheme.onSurface.withOpacity(0.55),
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 );
                               }),
                             ),
                           ),
-                          // grid cells
+
+                          // Grid cells
                           SizedBox(
                             width: gridWidth,
                             child: Column(
@@ -203,8 +228,8 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                                         height: rowHeight,
                                         decoration: BoxDecoration(
                                           border: Border(
-                                            right: BorderSide(color: Colors.grey.shade300),
-                                            bottom: BorderSide(color: Colors.grey.shade300),
+                                            right: BorderSide(color: gridLine),
+                                            bottom: BorderSide(color: gridLine),
                                           ),
                                         ),
                                       );
@@ -217,22 +242,26 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                         ],
                       ),
 
-                      // blocks
+                      // Blocks
                       ...weekdays.expand((w) {
                         final blocks = provider.blocksOf(w);
                         final colIndex = weekdays.indexOf(w);
+
                         return blocks.map((b) {
                           final top = headerHeight + b.startIndex * rowHeight;
                           final height = (b.endIndex - b.startIndex + 1) * rowHeight;
                           final left = hourColumnWidth + colIndex * dayWidth;
 
+                          final bg = theme.colorScheme.primary.withOpacity(0.16);
+                          final bd = theme.colorScheme.primary.withOpacity(0.40);
+
                           return Positioned(
-                            left: left + 2,
-                            top: top + 2,
-                            width: dayWidth - 4,
-                            height: height - 4,
+                            left: left + 6,
+                            top: top + 6,
+                            width: dayWidth - 12,
+                            height: height - 12,
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(14),
                               onTap: () async {
                                 await _openEditDialog(
                                   context: context,
@@ -244,19 +273,22 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                                 );
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.blue.withOpacity(0.5)),
+                                  color: bg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: bd),
                                 ),
                                 child: Align(
                                   alignment: Alignment.topLeft,
                                   child: Text(
                                     b.label,
-                                    maxLines: 2,
+                                    maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -265,25 +297,27 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                         });
                       }).toList(),
 
-                      // selection highlight
+                      // Selection highlight
                       if (selectionRect != null)
                         Positioned(
-                          left: selectionRect.left + 2,
-                          top: selectionRect.top + 2,
-                          width: selectionRect.width - 4,
-                          height: selectionRect.height - 4,
+                          left: selectionRect.left + 6,
+                          top: selectionRect.top + 6,
+                          width: selectionRect.width - 12,
+                          height: selectionRect.height - 12,
                           child: IgnorePointer(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.blue.withOpacity(0.6)),
+                                color: theme.colorScheme.primary.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary.withOpacity(0.55),
+                                ),
                               ),
                             ),
                           ),
                         ),
 
-                      // gesture layer
+                      // Gesture layer
                       Positioned(
                         left: hourColumnWidth,
                         top: headerHeight,
@@ -308,7 +342,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
 
                             final local = d.localPosition;
                             final currentW = _xToWeekday(local.dx, dayWidth, weekdays);
-                            if (currentW != w) return; // 시작 컬럼 고정
+                            if (currentW != w) return;
 
                             setState(() {
                               dragEndIndex = _yToIndex(local.dy, slotCount);
