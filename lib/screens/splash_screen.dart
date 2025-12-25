@@ -18,48 +18,68 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static const _delay = Duration(milliseconds: 900);
+  static const _minDelay = Duration(milliseconds: 900);
+
   bool _routed = false;
+  bool _minDelayDone = false;
 
   @override
   void initState() {
     super.initState();
-    _routeOnce();
+    _startMinDelay();
   }
 
-  Future<void> _routeOnce() async {
-    await Future.delayed(_delay);
-    if (!mounted || _routed) return;
+  Future<void> _startMinDelay() async {
+    await Future.delayed(_minDelay);
+    if (!mounted) return;
+    setState(() => _minDelayDone = true);
+  }
+
+  void _routeIfReady(AuthProvider auth) {
+    if (_routed) return;
+    if (!_minDelayDone) return;
+
+    // ✅ Firebase 준비 상태에서만 loading gate 적용
+    if (auth.firebaseReady && auth.loading) return;
+
     _routed = true;
 
-    final isFirstRun = HiveService.isFirstRun();
-    if (isFirstRun) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // ✅ 온보딩 우선
+      final isFirstRun = HiveService.isFirstRun();
+      if (isFirstRun) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        );
+        return;
+      }
+
+      // ✅ 로그인 상태 기반 라우팅 (이 시점엔 loading 끝난 상태)
+      Widget next;
+      if (!auth.isLoggedIn) {
+        next = const LoginScreen();
+      } else if (!auth.isEmailVerified) {
+        next = const VerifyEmailScreen();
+      } else {
+        next = const HomeScreen();
+      }
+
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        MaterialPageRoute(builder: (_) => next),
       );
-      return;
-    }
-
-    final auth = context.read<AuthProvider>();
-
-    Widget next;
-    if (!auth.isLoggedIn) {
-      next = const LoginScreen();
-    } else if (!auth.isEmailVerified) {
-      next = const VerifyEmailScreen();
-    } else {
-      next = const HomeScreen();
-    }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => next),
-    );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
+
+    // ✅ 여기서 auth 상태를 watch하고, 준비되면 라우팅
+    final auth = context.watch<AuthProvider>();
+    _routeIfReady(auth);
 
     return Scaffold(
       body: SafeArea(
@@ -84,7 +104,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-
                 const SizedBox(height: 16),
                 Text(
                   'TimeScraper',
@@ -95,7 +114,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '가능한 시간을 빠르게 찾습니다.',
+                  auth.firebaseReady && auth.loading
+                      ? '계정 확인 중...'
+                      : '가능한 시간을 빠르게 찾습니다.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.65),
                   ),

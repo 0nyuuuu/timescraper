@@ -13,15 +13,11 @@ class InviteSyncService {
       'inviterId': inviterId,
       'range': range,
       'createdAt': FieldValue.serverTimestamp(),
-      // ready flags
-      'inviterReady': false,
-      'joinerReady': false,
+      // ❌ 여기서 ready를 false로 쓰지 말 것 (리셋 방지)
     }, SetOptions(merge: true));
   }
 
   /// role: 'inviter' or 'joiner'
-  /// weeklyTable: { "1":[0,1,...], "2":[...], ... }  (weekday 1..7)
-  /// monthBusy: { "2025-12":[0/1...], "2026-01":[...] }
   static Future<void> uploadUserTables({
     required String inviteId,
     required String role, // inviter|joiner
@@ -43,7 +39,6 @@ class InviteSyncService {
     }, SetOptions(merge: true));
   }
 
-  /// both ready 스트림
   static Stream<bool> bothReadyStream(String inviteId) {
     return _db.collection('invites').doc(inviteId).snapshots().map((snap) {
       final data = snap.data();
@@ -54,7 +49,6 @@ class InviteSyncService {
     });
   }
 
-  /// 둘 다 준비되면 1번만 true 리턴
   static Future<void> waitUntilBothReady(String inviteId) async {
     await for (final ready in bothReadyStream(inviteId)) {
       if (ready) return;

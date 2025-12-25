@@ -14,8 +14,6 @@ Future<void> main() async {
   await HiveService.init();
   await NotificationService.I.init(); // ✅ 로컬 알림 초기화
 
-  await HiveService.debugResetFirstRun(); // 테스트 끝나면 삭제
-
   await initializeDateFormatting('ko_KR', null);
 
   bool firebaseReady = true;
