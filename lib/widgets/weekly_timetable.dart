@@ -10,9 +10,9 @@ class WeeklyTimetable extends StatefulWidget {
 }
 
 class _WeeklyTimetableState extends State<WeeklyTimetable> {
-  static const double hourColumnWidth = 52;  // ✅ 더 얇게
+  static const double hourColumnWidth = 52;
   static const double headerHeight = 46;
-  static const double rowHeight = 60;        // ✅ 블록 더 크게
+  static const double rowHeight = 60;
 
   int? dragWeekday; // 1..7
   int? dragStartIndex;
@@ -133,7 +133,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
           if (colIndex >= 0) {
             selectionRect = Rect.fromLTWH(
               hourColumnWidth + colIndex * dayWidth,
-              headerHeight + min * rowHeight,
+              min * rowHeight, // ✅ headerHeight 제거
               dayWidth,
               (max - min + 1) * rowHeight,
             );
@@ -142,7 +142,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
 
         return Column(
           children: [
-            // ===== Header =====
+            // ===== Header (Stack 밖) =====
             SizedBox(
               height: headerHeight,
               child: Row(
@@ -152,10 +152,6 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                     child: Container(
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        '',
-                        style: theme.textTheme.labelSmall,
-                      ),
                     ),
                   ),
                   ...weekdays.map((w) {
@@ -183,7 +179,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                       // Base grid
                       Row(
                         children: [
-                          // Hour column (작게 + 좌측 경계선)
+                          // Hour column
                           SizedBox(
                             width: hourColumnWidth,
                             child: Column(
@@ -248,7 +244,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                         final colIndex = weekdays.indexOf(w);
 
                         return blocks.map((b) {
-                          final top = headerHeight + b.startIndex * rowHeight;
+                          final top = b.startIndex * rowHeight; // ✅ headerHeight 제거
                           final height = (b.endIndex - b.startIndex + 1) * rowHeight;
                           final left = hourColumnWidth + colIndex * dayWidth;
 
@@ -320,7 +316,7 @@ class _WeeklyTimetableState extends State<WeeklyTimetable> {
                       // Gesture layer
                       Positioned(
                         left: hourColumnWidth,
-                        top: headerHeight,
+                        top: 0, // ✅ headerHeight 제거
                         width: gridWidth,
                         height: gridHeight,
                         child: GestureDetector(

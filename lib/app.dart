@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'providers/app_theme_provider.dart';
 import 'ui/app_theme.dart';
 
 import 'providers/auth_provider.dart';
@@ -24,35 +25,44 @@ class TimeScraperApp extends StatelessWidget {
       providers: [
         Provider<bool>.value(value: firebaseReady),
 
-        ChangeNotifierProvider(create: (_) => AuthProvider(firebaseReady: firebaseReady)),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(firebaseReady: firebaseReady),
+        ),
         ChangeNotifierProvider(create: (_) => WeeklyTimetableProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => CreateAppointmentProvider()),
         ChangeNotifierProvider(create: (_) => InviteEventProvider()),
         ChangeNotifierProvider(create: (_) => InviteLinkProvider()),
+
+        // ✅ Theme Provider (Hive load 포함)
+        ChangeNotifierProvider(create: (_) => AppThemeProvider()..load()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'TimeScraper',
+      child: Consumer<AppThemeProvider>(
+        builder: (context, theme, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'TimeScraper',
 
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: theme.mode, // ✅ 여기!
 
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('ko', 'KR'),
-          Locale('en', 'US'),
-        ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('ko', 'KR'),
+              Locale('en', 'US'),
+            ],
 
-        routes: {
-          '/invite-accept': (_) => const InviteAcceptScreen(),
+            routes: {
+              '/invite-accept': (_) => const InviteAcceptScreen(),
+            },
+            home: const SplashScreen(),
+          );
         },
-        home: const SplashScreen(),
       ),
     );
   }

@@ -213,13 +213,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           const SizedBox(height: 10),
           const Divider(height: 1),
+          const Divider(height: 1),
 
           // 아래 리스트 (선택 날짜 약속)
           Expanded(
             child: list.isEmpty
                 ? Center(
               child: Text(
-                '${_selectedDate.month}월 ${_selectedDate.day}일 약속 없음',
+                '${_selectedDate.month}월 ${_selectedDate.day}일 일정 없음',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -250,7 +251,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       context: context,
                       builder: (_) => AlertDialog(
                         title: const Text('삭제할까요?'),
-                        content: Text('“${a.title}” 약속을 삭제합니다.'),
+                        content: Text('“${a.title}” 일정을 삭제합니다.'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),

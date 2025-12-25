@@ -69,7 +69,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   Widget build(BuildContext context) {
     final d = widget.date;
     return Scaffold(
-      appBar: AppBar(title: const Text('약속 추가')),
+      appBar: AppBar(title: const Text('일정 추가')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
