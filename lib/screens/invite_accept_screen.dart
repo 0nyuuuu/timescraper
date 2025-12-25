@@ -222,7 +222,6 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
         _status = recs.isEmpty ? '가능한 시간이 없어요.' : '추천 완료! 아래에서 선택해줘.';
       });
 
-      // ✅ 앱 내부에서 “현재 초대 세션 정보”만 저장(필요하면 유지)
       context.read<InviteEventProvider>().createEvent(inviteEvent);
     } catch (e) {
       debugPrint('❌ 초대 수락 오류: $e');
@@ -237,7 +236,15 @@ class _InviteAcceptScreenState extends State<InviteAcceptScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final inviteData = context.watch<InviteLinkProvider>().inviteData;
+
+    // ✅ 1) arguments 우선
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final inviteDataFromArgs = (args is String) ? args : null;
+
+    // ✅ 2) 없으면 Provider fallback
+    final inviteDataFromProvider = context.watch<InviteLinkProvider>().inviteData;
+
+    final inviteData = inviteDataFromArgs ?? inviteDataFromProvider;
 
     if (inviteData == null) {
       return const Scaffold(
