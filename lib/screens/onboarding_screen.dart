@@ -80,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // ===== Top Brand =====
               Row(
                 children: [
-                  _AppMark(size: 34),
+                  const _AppMark(size: 34), // ✅ 로고 마크
                   const SizedBox(width: 10),
                   Text(
                     'TimeScraper',
@@ -119,7 +119,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     children: [
                       Checkbox(
                         value: _dontShowAgain,
-                        onChanged: (v) => setState(() => _dontShowAgain = v ?? true),
+                        onChanged: (v) =>
+                            setState(() => _dontShowAgain = v ?? true),
                       ),
                       const Text('다시 보지 않기'),
                     ],
@@ -257,6 +258,7 @@ class _Dots extends StatelessWidget {
   }
 }
 
+// ✅ 로고 마크(세로형 로고 -> contain)
 class _AppMark extends StatelessWidget {
   final double size;
   const _AppMark({required this.size});
@@ -268,12 +270,16 @@ class _AppMark extends StatelessWidget {
     return Container(
       width: size,
       height: size,
+      padding: EdgeInsets.all(size * 0.12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.32),
-        color: theme.colorScheme.primary.withOpacity(0.14),
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.25)),
+        color: theme.colorScheme.primary.withOpacity(0.10),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.18)),
       ),
-      child: Icon(Icons.timelapse_rounded, color: theme.colorScheme.primary, size: size * 0.62),
+      child: Image.asset(
+        'assets/images/Logo.png',
+        fit: BoxFit.contain,
+      ),
     );
   }
 }

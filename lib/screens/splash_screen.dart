@@ -69,17 +69,22 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ✅ 로고 플레이스홀더 (assets 넣으면 여기만 교체)
+                // ✅ 로고 (세로형 400x616 -> contain)
                 Container(
-                  width: 84,
-                  height: 84,
+                  width: 104,
+                  height: 104,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: accent.withOpacity(0.25)),
+                    color: accent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: accent.withOpacity(0.18)),
                   ),
-                  child: Icon(Icons.access_time_rounded, size: 42, color: accent),
+                  child: Image.asset(
+                    'assets/images/Logo.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
+
                 const SizedBox(height: 16),
                 Text(
                   'TimeScraper',
